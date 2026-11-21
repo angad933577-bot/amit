@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ Colorful Todo App - Manage Your Tasks</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti for Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 text-slate-800 antialiased py-8 px-4 sm:px-6 lg:px-8">
+
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Top Header Bar -->
+    <header class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl shadow-indigo-100/60 border border-white">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 text-2xl transform hover:rotate-12 transition-transform duration-300">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-violet-700 via-indigo-600 to-pink-600 bg-clip-text text-transparent">
+            TaskMaster Pro
+          </h1>
+          <p class="text-xs sm:text-sm font-medium text-slate-500">
+            Aapke daily tasks, ab colorful aur smart tarike se
+          </p>
+        </div>
+      </div>
+
+      <!-- Cloud / Local Status Badge -->
+      <div class="flex items-center gap-2">
+        <% if (isMongo) { %>
+          <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            MongoDB Cloud Active
+          </span>
+        <% } else { %>
+          <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 shadow-sm" title="Data local file me safely save ho raha hai!">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            ⚡ Fast Local Mode (100% Ready)
+          </span>
+        <% } %>
+      </div>
+    </header>
+
+    <!-- Error Alert if any -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-3 shadow-sm">
+        <i class="fa-solid fa-circle-exclamation text-lg"></i>
+        <p class="text-sm font-medium"><%= error %></p>
+      </div>
+    <% } %>
+
+    <!-- Stat Counter Cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- Total -->
+      <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-indigo-100">Total Tasks</p>
+            <h3 class="text-3xl font-black mt-1" id="stat-total"><%= stats.total %></h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+        </div>
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+      </div>
+
+      <!-- Pending -->
+      <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-amber-100">Pending</p>
+            <h3 class="text-3xl font-black mt-1" id="stat-pending"><%= stats.pending %></h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-hourglass-half"></i>
+          </div>
+        </div>
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+      </div>
+
+      <!-- Completed -->
+      <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-emerald-100">Completed</p>
+            <h3 class="text-3xl font-black mt-1" id="stat-completed"><%= stats.completed %></h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+      </div>
+    </section>
+
+    <!-- Add Task Form Card -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-indigo-100/60 border border-slate-100 transition-all">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-8 h-8 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center font-bold">
+          <i class="fa-solid fa-plus"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800">Naya Task Add Karein</h2>
+      </div>
+
+      <form action="/todos" method="POST" class="space-y-4">
+        <!-- Title & Priority Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label for="title" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Task Title <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-pen-fancy"></i>
+              </span>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                placeholder="Jaise: Learn Node.js & Mongo, Gym, Homework..."
+                required
+                autocomplete="off"
+                class="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-medium"
+              >
+            </div>
+          </div>
+
+          <!-- Priority Selector -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Priority Level
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="cursor-pointer">
+                <input type="radio" name="priority" value="high" class="peer sr-only">
+                <div class="py-2.5 text-center text-xs font-bold rounded-xl border border-rose-200 peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-500 peer-checked:shadow-md peer-checked:shadow-rose-500/30 text-rose-600 hover:bg-rose-50 transition-all">
+                  🔥 High
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="priority" value="medium" class="peer sr-only" checked>
+                <div class="py-2.5 text-center text-xs font-bold rounded-xl border border-amber-200 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 peer-checked:shadow-md peer-checked:shadow-amber-500/30 text-amber-600 hover:bg-amber-50 transition-all">
+                  ⚡ Med
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="priority" value="low" class="peer sr-only">
+                <div class="py-2.5 text-center text-xs font-bold rounded-xl border border-emerald-200 peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 peer-checked:shadow-md peer-checked:shadow-emerald-500/30 text-emerald-600 hover:bg-emerald-50 transition-all">
+                  🌱 Low
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="description" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Description <span class="text-slate-400 font-normal lowercase">(optional)</span>
+          </label>
+          <div class="relative">
+            <span class="absolute top-3 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-align-left"></i>
+            </span>
+            <textarea
+              id="description"
+              name="description"
+              rows="2"
+              placeholder="Task ke baare me koi khaas details..."
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-medium"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex justify-end pt-2">
+          <button
+            type="submit"
+            class="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 hover:from-violet-700 hover:to-pink-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center gap-2 cursor-pointer"
+          >
+            <i class="fa-solid fa-plus-circle text-base"></i>
+            Task Save Karein
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Filter & Search Controls -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-white shadow-sm">
+      <!-- Search Input -->
+      <div class="relative w-full sm:w-72">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search task..."
+          class="w-full pl-9 pr-4 py-2 text-sm bg-white rounded-xl border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+        >
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        <button
+          onclick="filterTodos('all')"
+          id="filter-all"
+          class="filter-btn active-tab px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-500/20 transition-all"
+        >
+          All (<%= stats.total %>)
+        </button>
+        <button
+          onclick="filterTodos('pending')"
+          id="filter-pending"
+          class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all"
+        >
+          Pending (<%= stats.pending %>)
+        </button>
+        <button
+          onclick="filterTodos('completed')"
+          id="filter-completed"
+          class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all"
+        >
+          Completed (<%= stats.completed %>)
+        </button>
+      </div>
+    </div>
+
+    <!-- Todo List Items -->
+    <main class="space-y-3.5" id="todo-container">
+      <% if (todos.length === 0) { %>
+        <!-- Empty State -->
+        <div id="empty-state" class="bg-white rounded-3xl p-12 text-center shadow-lg shadow-indigo-100/50 border border-slate-100">
+          <div class="w-20 h-20 mx-auto rounded-3xl bg-indigo-50 flex items-center justify-center text-indigo-500 text-3xl mb-4 animate-bounce">
+            <i class="fa-regular fa-clipboard"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">Abhi koi task nahi hai!</h3>
+          <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+            Upar diye gaye form se naya task add karein aur apne din ko organize karein.
+          </p>
+        </div>
+      <% } else { %>
+        <% todos.forEach(todo => { %>
+          <% 
+            const isDone = todo.completed;
+            const priority = todo.priority || 'medium';
+            let borderAccent = 'border-l-indigo-500';
+            let badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+            let badgeText = '⚡ Medium';
+
+            if (priority === 'high') {
+              borderAccent = 'border-l-rose-500';
+              badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+              badgeText = '🔥 High';
+            } else if (priority === 'low') {
+              borderAccent = 'border-l-emerald-500';
+              badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+              badgeText = '🌱 Low';
+            }
+          %>
+
+          <div
+            data-id="<%= todo._id %>"
+            data-status="<%= isDone ? 'completed' : 'pending' %>"
+            data-priority="<%= priority %>"
+            data-title="<%= (todo.title || '').toLowerCase() %>"
+            data-desc="<%= (todo.description || '').toLowerCase() %>"
+            class="todo-card group relative bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 border-l-[6px] <%= borderAccent %> shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-r hover:border-t hover:border-b hover:border-slate-300 transition-all duration-300 flex items-start justify-between gap-4 <%= isDone ? 'bg-slate-50/70 opacity-80' : '' %>"
+          >
+            <!-- Left Side: Toggle button & Content -->
+            <div class="flex items-start gap-4 flex-1 min-w-0">
+              <!-- Complete Toggle Button Form -->
+              <form action="/todos/<%= todo._id %>/toggle" method="POST" class="pt-0.5">
+                <button
+                  type="submit"
+                  title="<%= isDone ? 'Mark as Incomplete' : 'Mark as Complete' %>"
+                  onclick="triggerConfettiIfDone(event, <%= isDone ? 'false' : 'true' %>)"
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer <%= isDone ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 hover:scale-110' : 'border-2 border-slate-300 text-transparent hover:border-indigo-500 hover:text-indigo-400 hover:scale-110' %>"
+                >
+                  <i class="fa-solid fa-check text-xs sm:text-sm"></i>
+                </button>
+              </form>
+
+              <!-- Text Content -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                  <h3 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight transition-all <%= isDone ? 'line-through text-slate-400 font-medium' : '' %>">
+                    <%= todo.title %>
+                  </h3>
+                  <!-- Priority Badge -->
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold border <%= badgeClass %> shadow-xs">
+                    <%= badgeText %>
+                  </span>
+                  <% if (isDone) { %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                      <i class="fa-solid fa-check-double mr-1"></i> Done
+                    </span>
+                  <% } %>
+                </div>
+
+                <% if (todo.description) { %>
+                  <p class="text-xs sm:text-sm text-slate-500 leading-relaxed break-words <%= isDone ? 'line-through text-slate-400' : '' %>">
+                    <%= todo.description %>
+                  </p>
+                <% } %>
+
+                <!-- Footer / Date -->
+                <div class="flex items-center gap-4 mt-2.5 text-[11px] font-medium text-slate-400">
+                  <span class="flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar-days text-indigo-400"></i>
+                    <%= new Date(todo.createdAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock text-indigo-400"></i>
+                    <%= new Date(todo.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Delete Action Button -->
+            <div class="flex items-center gap-2 pt-1">
+              <form action="/todos/<%= todo._id %>/delete" method="POST" onsubmit="return confirm('Kya aap is task ko sach me delete karna chahte hain?');">
+                <button
+                  type="submit"
+                  title="Task Delete Karein"
+                  class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-transparent hover:border-rose-200"
+                >
+                  <i class="fa-regular fa-trash-can text-sm sm:text-base"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-slate-400">
+      <p>Made with ❤️ Express, EJS & Tailwind CSS • Full CRUD Ready</p>
+    </footer>
+
+  </div>
+
+  <!-- Client-side Interactive Scripts -->
+  <script>
+    // Confetti effect when completing a task
+    function triggerConfettiIfDone(event, willBeDone) {
+      if (willBeDone && typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      }
+    }
+
+    // Live Instant Search & Filter Functionality
+    const searchInput = document.getElementById('search-input');
+    let currentFilter = 'all';
+
+    function filterTodos(filterType) {
+      currentFilter = filterType;
+
+      // Update button active styles
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/20');
+        btn.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+      });
+
+      const activeBtn = document.getElementById('filter-' + filterType);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/20');
+      }
+
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const cards = document.querySelectorAll('.todo-card');
+
+      cards.forEach(card => {
+        const status = card.getAttribute('data-status');
+        const title = card.getAttribute('data-title') || '';
+        const desc = card.getAttribute('data-desc') || '';
+
+        const matchesFilter = (currentFilter === 'all') || (status === currentFilter);
+        const matchesSearch = query === '' || title.includes(query) || desc.includes(query);
+
+        if (matchesFilter && matchesSearch) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', applyFilters);
+    }
+  </script>
+</body>
+</html>
